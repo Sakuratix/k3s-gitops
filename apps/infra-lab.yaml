@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-lab
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sakuratix/infra-lab.git
+    targetRevision: main
+    path: helm/app
+    helm:
+      valuesObject:
+        ingress: { enabled: true, host: lab.example.com }
+        serviceMonitor: { enabled: true }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: infra-lab
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]

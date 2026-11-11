@@ -1,0 +1,36 @@
+grafana:
+  adminPassword: ""          # set via existingSecret in a real cluster
+  admin: { existingSecret: grafana-admin }
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts: [grafana.example.com]
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    resources:
+      requests: { cpu: 100m, memory: 512Mi }
+    serviceMonitorSelectorNilUsesHelmValues: false   # pick up ServiceMonitors from every namespace
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          resources: { requests: { storage: 10Gi } }
+alertmanager:
+  config:
+    route:
+      receiver: telegram
+      group_by: [alertname, namespace]
+      routes:
+        - matchers: [alertname="Watchdog"]
+          receiver: "null"
+    receivers:
+      - name: "null"
+      - name: telegram
+        webhook_configs:
+          - url: http://alertmanager-telegram-relay.monitoring:9087/alert
+            send_resolved: true
+kubeEtcd: { enabled: false }          # k3s uses sqlite / embedded etcd without metrics by default
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
