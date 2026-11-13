@@ -1,0 +1,22 @@
+# Alertmanager already sends to this relay (platform/monitoring/values.yaml), but nothing
+# deployed it, so every alert went to a Service that didn't exist.
+# The bot token stays out of git:
+#   kubectl -n monitoring create secret generic tg-relay --from-literal=token=<bot token> --from-literal=chat_id=<chat id>
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alertmanager-telegram-relay
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/Sakuratix/alertmanager-telegram-relay.git
+    targetRevision: main
+    path: deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

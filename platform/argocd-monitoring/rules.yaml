@@ -1,0 +1,33 @@
+# GitOps only works if someone notices when git and the cluster disagree.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: argocd
+  namespace: monitoring
+spec:
+  groups:
+    - name: argocd
+      rules:
+        - alert: ArgoCDAppOutOfSync
+          expr: argocd_app_info{sync_status!="Synced"} == 1
+          for: 15m
+          labels: { severity: warning }
+          annotations:
+            summary: "{{ $labels.name }} is {{ $labels.sync_status }}: the cluster differs from git"
+        - alert: ArgoCDAppUnhealthy
+          expr: argocd_app_info{health_status!~"Healthy|Progressing|Suspended"} == 1
+          for: 10m
+          labels: { severity: critical }
+          annotations:
+            summary: "{{ $labels.name }} is {{ $labels.health_status }}. Check it with kubectl why"
+        - alert: ArgoCDSyncFailing
+          expr: increase(argocd_app_sync_total{phase=~"Error|Failed"}[15m]) > 0
+          labels: { severity: warning }
+          annotations:
+            summary: "syncs of {{ $labels.name }} are failing"
+        - alert: ArgoCDMetricsMissing
+          expr: absent(up{namespace="argocd"} == 1)
+          for: 15m
+          labels: { severity: warning }
+          annotations:
+            summary: "Argo CD is not being scraped, GitOps alerts above can't fire"

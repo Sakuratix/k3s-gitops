@@ -10,6 +10,8 @@ apps/                        по Application на компонент, поря�
   cert-manager       wave 0
   cluster-issuer     wave 1  Let's Encrypt
   kube-prometheus-stack wave 1
+  alertmanager-telegram-relay wave 2  доставка алертов в Telegram
+  argocd-monitoring  wave 2  метрики и алерты самого Argo CD
   infra-lab          wave 2  приложение из github.com/Sakuratix/infra-lab
 platform/                    values для чартов
 ```
@@ -31,5 +33,6 @@ sudo ./install.sh
 
 - **Traefik отключён**, вместо него ingress-nginx: тот же контроллер, что в большинстве managed-кластеров, конфиги переносятся без изменений.
 - **Values отдельно от чартов** через multi-source Applications: версия чарта и настройки меняются независимо.
-- **Алерты** идут в Telegram через [alertmanager-telegram-relay](https://github.com/Sakuratix/alertmanager-telegram-relay).
+- **Алерты** идут в Telegram через [alertmanager-telegram-relay](https://github.com/Sakuratix/alertmanager-telegram-relay), который разворачивается этим же репозиторием. Токен бота в git не лежит: `kubectl -n monitoring create secret generic tg-relay --from-literal=token=... --from-literal=chat_id=...`.
+- **Argo CD мониторит сам себя**: алерты, если приложение разошлось с git дольше 15 минут, стало Degraded, синхронизация падает или метрики Argo CD пропали. GitOps без таких алертов тихо перестаёт быть GitOps.
 - **Проверка в CI**: все манифесты прогоняются через [kubeconform](https://github.com/yannh/kubeconform) со схемами CRD из [datreeio/CRDs-catalog](https://github.com/datreeio/CRDs-catalog).
