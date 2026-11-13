@@ -1,0 +1,67 @@
+# Argo CD projects: what each group of Applications may pull and where it may deploy.
+# Synced by the root app first (wave -1), so projects are managed from git like everything else.
+# Without them every Application lives in "default", which can deploy anything from
+# any repo into any namespace, so one wrong path in git could overwrite kube-system.
+---
+# default: only the root app lives here. It may create Applications and AppProjects
+# in argocd from this repository and nothing else.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: default
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "-1" }
+spec:
+  description: root app of apps only
+  sourceRepos: [https://github.com/Sakuratix/k3s-gitops.git]
+  destinations:
+    - { server: https://kubernetes.default.svc, namespace: argocd }
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - { group: argoproj.io, kind: Application }
+    - { group: argoproj.io, kind: AppProject }
+---
+# platform: cluster add-ons installed from pinned upstream charts. They need
+# cluster-scoped objects (CRDs, ClusterRoles, webhooks), so those are allowed here only.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "-1" }
+spec:
+  description: ingress, certificates, monitoring
+  sourceRepos:
+    - https://github.com/Sakuratix/k3s-gitops.git
+    - https://github.com/Sakuratix/alertmanager-telegram-relay.git
+    - https://kubernetes.github.io/ingress-nginx
+    - https://charts.jetstack.io
+    - https://prometheus-community.github.io/helm-charts
+  destinations:
+    - { server: https://kubernetes.default.svc, namespace: ingress-nginx }
+    - { server: https://kubernetes.default.svc, namespace: cert-manager }
+    - { server: https://kubernetes.default.svc, namespace: monitoring }
+    - { server: https://kubernetes.default.svc, namespace: kube-system }   # kube-prometheus-stack puts its kubelet/coredns Services there
+  clusterResourceWhitelist:
+    - { group: "*", kind: "*" }
+  orphanedResources: { warn: true }
+---
+# apps: workloads. Namespaced objects only, in their own namespaces, from their own repos.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: apps
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "-1" }
+spec:
+  description: application workloads
+  sourceRepos: [https://github.com/Sakuratix/infra-lab.git]
+  destinations:
+    - { server: https://kubernetes.default.svc, namespace: infra-lab }
+  clusterResourceWhitelist:
+    - { group: "", kind: Namespace }   # for CreateNamespace=true
+  namespaceResourceBlacklist:
+    - { group: "", kind: ResourceQuota }
+    - { group: "", kind: LimitRange }
+    - { group: networking.k8s.io, kind: NetworkPolicy }   # guardrails are owned by the platform, not the app
+  orphanedResources: { warn: true }

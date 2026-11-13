@@ -5,6 +5,7 @@
 ```
 bootstrap/root-app.yaml      Argo CD смотрит в apps/
 apps/                        по Application на компонент, порядок через sync-wave
+  projects           wave -1 AppProject: кто что может деплоить и куда
   ingress-nginx      wave 0
   cert-manager       wave 0
   cluster-issuer     wave 1  Let's Encrypt
@@ -25,6 +26,8 @@ sudo ./install.sh
 Дальше любые изменения только через git: поменял values, сделал push, Argo CD синхронизировал. Ручные правки в кластере откатываются (`selfHeal: true`).
 
 ## Решения
+
+- **AppProject вместо `default` для всего.** `platform` ставит аддоны из закреплённых Helm-репозиториев и только ему разрешены кластерные объекты (CRD, ClusterRole). `apps` деплоит только из репозитория приложения, только в свой namespace и не может трогать ResourceQuota, LimitRange и NetworkPolicy. В `default` остался один root app, которому можно создавать только Application в `argocd`. Ошибка пути в git больше не перезапишет kube-system.
 
 - **Traefik отключён**, вместо него ingress-nginx: тот же контроллер, что в большинстве managed-кластеров, конфиги переносятся без изменений.
 - **Values отдельно от чартов** через multi-source Applications: версия чарта и настройки меняются независимо.

@@ -1,5 +1,5 @@
 # App of apps: Argo CD watches apps/ and creates everything else from git.
-# kubectl apply -n argocd -f bootstrap/root-app.yaml
+# Applied once by install.sh; after that everything, projects included, comes from apps/.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
