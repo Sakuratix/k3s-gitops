@@ -17,6 +17,9 @@ prometheus:
           storageClassName: local-path
           resources: { requests: { storage: 10Gi } }
 alertmanager:
+  alertmanagerSpec:
+    # mounted at /etc/alertmanager/secrets/tg-relay/; the same Secret the relay reads
+    secrets: [tg-relay]
   config:
     route:
       receiver: telegram
@@ -30,6 +33,11 @@ alertmanager:
         webhook_configs:
           - url: http://alertmanager-telegram-relay.monitoring:9087/alert
             send_resolved: true
+            # the relay rejects /alert without this token, so nothing else in the
+            # cluster can post into the on-call chat
+            http_config:
+              authorization:
+                credentials_file: /etc/alertmanager/secrets/tg-relay/webhook_token
 kubeEtcd: { enabled: false }          # k3s uses sqlite / embedded etcd without metrics by default
 kubeControllerManager: { enabled: false }
 kubeScheduler: { enabled: false }

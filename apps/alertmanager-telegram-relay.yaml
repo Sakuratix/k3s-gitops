@@ -1,7 +1,10 @@
 # Alertmanager already sends to this relay (platform/monitoring/values.yaml), but nothing
 # deployed it, so every alert went to a Service that didn't exist.
 # The bot token stays out of git:
-#   kubectl -n monitoring create secret generic tg-relay --from-literal=token=<bot token> --from-literal=chat_id=<chat id>
+#   kubectl -n monitoring create secret generic tg-relay --from-literal=token=<bot token> \
+#     --from-literal=chat_id=<chat id> --from-literal=webhook_token="$(openssl rand -hex 32)"
+# webhook_token is shared with Alertmanager (platform/monitoring/values.yaml), which
+# authenticates to the relay with it.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
