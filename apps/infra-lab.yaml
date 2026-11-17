@@ -15,6 +15,10 @@ spec:
       valuesObject:
         ingress: { enabled: true, host: lab.example.com }
         serviceMonitor: { enabled: true }
+        # The "apps" project doesn't let workloads ship their own NetworkPolicy (guardrails
+        # belong to the platform), so the chart's policy would make every sync fail.
+        # The same default-deny policy comes from platform/guardrails instead.
+        networkPolicy: { enabled: false }
   destination:
     server: https://kubernetes.default.svc
     namespace: infra-lab

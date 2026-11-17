@@ -1,0 +1,23 @@
+# Platform-owned guardrails for application namespaces (NetworkPolicies today).
+# Synced before the apps (wave 1 < 2) so a workload never runs without its policy.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guardrails
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/Sakuratix/k3s-gitops.git
+    targetRevision: main
+    path: platform/guardrails
+    directory: { recurse: true }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: infra-lab
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    retry: { limit: 5, backoff: { duration: 10s, factor: 2, maxDuration: 3m } }
+    syncOptions: [CreateNamespace=true]

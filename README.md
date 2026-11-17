@@ -33,6 +33,7 @@ sudo ./install.sh
 
 - **Traefik отключён**, вместо него ingress-nginx: тот же контроллер, что в большинстве managed-кластеров, конфиги переносятся без изменений.
 - **Values отдельно от чартов** через multi-source Applications: версия чарта и настройки меняются независимо.
+- **Сетевые guardrails у платформы.** Проект `apps` не даёт приложению создавать свои NetworkPolicy, поэтому default-deny для namespace `infra-lab` лежит в `platform/guardrails/` и синхронизируется до самого приложения. Команда приложения не может ослабить политику, поправив свои values.
 - **Политики проверяются до merge.** `hack/check-apps.py` в CI: каждый Application в своём проекте (не `default`), его репозиторий и namespace разрешены этим проектом, upstream-чарты закреплены на точной версии, у автосинка есть retry. Argo CD всё это тоже проверит, но уже после merge, когда кластер в ошибке.
 - **Повторы синхронизации.** У каждого Application `retry` с экспоненциальной задержкой (10s → 3m, 5 попыток). На свежем кластере `cluster-issuer` синхронизируется раньше, чем cert-manager успел поднять webhook, и без повторов просто висел бы в ошибке до следующего коммита.
 - **Алерты** идут в Telegram через [alertmanager-telegram-relay](https://github.com/Sakuratix/alertmanager-telegram-relay), который разворачивается этим же репозиторием. Токен бота в git не лежит: `kubectl -n monitoring create secret generic tg-relay --from-literal=token=... --from-literal=chat_id=...`.

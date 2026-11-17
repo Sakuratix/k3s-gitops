@@ -42,6 +42,7 @@ spec:
     - { server: https://kubernetes.default.svc, namespace: cert-manager }
     - { server: https://kubernetes.default.svc, namespace: monitoring }
     - { server: https://kubernetes.default.svc, namespace: kube-system }   # kube-prometheus-stack puts its kubelet/coredns Services there
+    - { server: https://kubernetes.default.svc, namespace: infra-lab }     # guardrails only: NetworkPolicies the app may not own
   clusterResourceWhitelist:
     - { group: "*", kind: "*" }
   orphanedResources: { warn: true }
